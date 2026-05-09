@@ -1,24 +1,63 @@
 version: "3.9"
 
 services:
+  db:
+    image: postgres:15
+    container_name: hyperion_db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
   django:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: hyperion_django
     ports:
       - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
 
   fastapi:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: hyperion_fastapi
     ports:
       - "8001:8000"
+    depends_on:
+      - django
+    env_file:
+      - .env
+    volumes:
+      - ./api:/app
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
+    container_name: hyperion_frontend
     ports:
       - "3000:3000"
-
-  db:
-    image: postgres:15
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: hyperion_workroom
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

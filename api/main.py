@@ -2,6 +2,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.get("/ping")
+@app.get("/home")
 def ping():
-    return {"message": "ok"}
+    return {"message": "home"}
